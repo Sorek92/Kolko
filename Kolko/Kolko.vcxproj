@@ -133,11 +133,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Game.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="pole.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Field.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pole.h" />
+    <ClInclude Include="Game.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="Field.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Almendra-Regular.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
