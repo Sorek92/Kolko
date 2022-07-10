@@ -1,62 +1,311 @@
 #include "Game.h"
 
-Game::Game() {
-    window.create(VideoMode(400,400), L"Kó³ko i Krzy¿yk");
+// Private init functions
 
-    wygranePola = "048,246,012,345,678,036,147,258";
+void Game::initVariables() {
+    
+    /*
+        @return void
+        - 
 
-    loadPlayers();
-    wczytaj_plansze();
-    if (player1->draw_sign == 'O') {
-        ActivePlayer = player1;
+    */
+
+
+    this->window = nullptr;
+    
+    this->winnerBoard = "048,246,012,345,678,036,147,258";
+    this->winnerPlayer = nullptr;
+
+    this->boardPosition.x = 200;
+    this->boardPosition.y = 250;
+    this->sizeBoardField = { 70 };
+    this->gold = { 1.2 };
+
+   
+
+
+}
+
+void Game::initWindow() {
+
+    this->videoMode.height = 400;
+    this->videoMode.width = 400;
+    
+    this->window = new RenderWindow(this->videoMode, L"Kó³ko i Krzy¿yk", Style::Titlebar | Style::Close);
+
+    this->window->setFramerateLimit(60);
+}
+
+void Game::initBoard() {
+
+    Vector2f center = this->boardPosition;
+
+    Vector2f pos1;
+    pos1.x = center.x - (this->gold + 0.5) * this->sizeBoardField;
+    pos1.y = center.y - (this->gold + 0.5) * this->sizeBoardField;
+    Vector2f tempPos = pos1;
+
+
+    for (int i = 0; i < 3; i++) {
+
+        for (int j = 0; j < 3; j++) {
+            this->field1.setPosition(tempPos.x, tempPos.y, this->sizeBoardField);
+            this->board.push_back(this->field1);
+            tempPos.x += this->gold * this->sizeBoardField;
+
+        }
+        tempPos.x = pos1.x;
+        tempPos.y += this->gold * this->sizeBoardField;
+    }
+    
+}
+
+void Game::initPlayers() {
+
+    RenderWindow* pole1;
+    RenderWindow* pole2;
+
+    // create new window to read name of player 1
+    pole1 = new RenderWindow(VideoMode(400, 200), "player 1");
+    player1 = new Player(setNameOfPlayer("player 1", "Wpisz imie gracza pierwszego", { 10,20 }, { 10, 50 }, pole1));
+    pole1->close();
+    player1->setColor(Color::Yellow);
+    player1->setBackgroundRectangle(Color(255, 214, 77, 50),{0,0});
+
+    // create new window to read name of player 2
+    pole2 = new RenderWindow(VideoMode(400, 200), "player 2");
+    player2 = new Player(setNameOfPlayer("player 2", "Wpisz imie gracza drugiego", { 10, 20 }, { 10, 50 }, pole2));
+    pole2->close();
+    player2->setColor(Color::Green);
+    player2->setBackgroundRectangle(Color(100, 255, 25, 50),{200,0});
+
+    // random sign of player
+    char z = signDrawing();
+
+    this->player1->setDrawSign(z);
+    if (z == 'X') {
+        this->player2->setDrawSign('O');
+        this->ActivePlayer = this->player2;
     }
     else {
-        ActivePlayer = player2;
+        this->player2->setDrawSign('X');
+        this->ActivePlayer = this->player1;
     }
+
+
+
+    delete pole1;
+    delete pole2;
+}
+
+void Game::initFonts() {
+    if (!this->font1.loadFromFile("Almendra-Regular.ttf"))
+        cout << "Nie wczytano czcionki \n";
+}
+
+void Game::initTexts() {
+
+    this->playerText1.setPosition(Vector2f(10,10));
+    this->playerText1.setFillColor(this->player1->getColor());
+    this->playerText1.setFont(this->font1);
+    this->playerText1.setString("Player : \n"+this->player1->getName());
+
+    this->playerText2.setPosition(Vector2f(300,10));
+    this->playerText2.setFillColor(this->player2->getColor());
+    this->playerText2.setFont(this->font1);
+    this->playerText2.setString("Player : \n"+this->player2->getName());
+
+    this->znak1.setPosition(Vector2f(this->videoMode.width/2-30, 10));
+    this->znak1.setFillColor(this->player1->getColor());
+    this->znak1.setFont(this->font1);
+    this->znak1.setString(this->player1->getDrawSign());
+
+    this->znak2.setPosition(Vector2f(this->videoMode.width / 2 + 30, 10));
+    this->znak2.setFillColor(this->player2->getColor());
+    this->znak2.setFont(this->font1);
+    this->znak2.setString(this->player2->getDrawSign());
+
+}
+
+// Constructors / Descructors
+
+Game::Game() {
+    this->initVariables();
+    this->initFonts();
+    this->initWindow();
+    this->initPlayers();
+    this->initBoard();
+    this->initTexts();
+
 }
 
 Game::~Game() {
     cout << "desctructor game";
+    delete this->window;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// Functions
+
+// Game loop function 
+
+const bool Game::windowIsOpen() const {
+    return this->window->isOpen();
+}
+
+// Event function
+void Game::pollEvents() {
+
+    while (this->window->pollEvent(e)) {
+
+        switch (e.type)
+        {
+        case Event::Closed: {
+            this->window->close();
+            break;
+        }
+        case Event::MouseButtonPressed: {
+            if (e.mouseButton.button == Mouse::Left)
+                this->updateBoard();
+            break;
+        }
+
+        default:
+            break;
+        }
+
+
+    }
+
+}
+
+void Game::updateMousePositions() {
+
+    // mouse position ralative to window
+    this->mousePosWindow = Mouse::getPosition(*this->window);
+
+    this->mousePosView = this->window->mapPixelToCoords(this->mousePosWindow);// check it
+}
+
+void Game::updateTexts() {
+    if (this->winnerPlayer == this->player1) {
+        this->playerText1.setString(this->player1->getName()+"\nwinner");
+    }
+
+    if(this->winnerPlayer == this->player2) {
+        this->playerText2.setString(this->player2->getName() + "\nwinner");
+    }
+
+}
+
+void Game::updateBoard() {
+
+    // all fields
+    // when left key mouse press
+    if (Mouse::isButtonPressed(Mouse::Left)) {
+        
+        for (int i = 0; i < this->board.size(); i++) {
+
+            if (this->board[i].square.getGlobalBounds().contains(this->mousePosView) && 
+                (this->board[i].getSignChar() != 'X' && this->board[i].getSignChar() != 'O')
+                ) {
+                this->board[i].square.setFillColor(Color(108, 122, 137));
+                this->board[i].sign.setFillColor(this->ActivePlayer->getColor());
+                this->board[i].sign.setString(this->ActivePlayer->getDrawSign());
+                this->checkIfWinner(this->ActivePlayer->getDrawSign());
+                if (this->ActivePlayer == this->player1) {
+                    this->ActivePlayer = this->player2;
+                }
+                else {
+                    this->ActivePlayer = this->player1;
+                }
+                break;
+            }
+
+        }
+
+    }
+    
+}
+
 
 void Game::update() {
 
-    window.clear();
-    window.draw(zawodnicy(player1, Vector2f(10,10)));
-    window.draw(zawodnicy(player2, Vector2f(300, 10)));
-    for (int i = 0; i < 9; i++) {
-        window.draw(field[i].getField());
-        window.draw(field[i].getSign());
+    /*
+        @return void
+        - waiting for events
+
+        Update objects in game
+    */
+
+    this->pollEvents();
+    if (this->winnerPlayer != this->player1 && this->winnerPlayer != player2) {
+
+    
+        this->updateMousePositions();
+
+    
     }
-    window.display();
+    this->updateTexts();
+}
+
+
+void Game::renderTexts() {
+    this->window->draw(playerText1);
+    this->window->draw(playerText2);
+    this->window->draw(znak1);
+    this->window->draw(znak2);
+    this->window->draw(this->ActivePlayer->getBackgroundRectangle());
+}
+
+void Game::renderBoard() {
+    for (auto& e : this->board) {
+        this->window->draw(e.getField());
+        this->window->draw(e.getSign());
+    }
+}
+
+void Game::render() {
+
+    /*
+        @return void
+        - clear old frame
+        - draw objects
+        - display frame in window
+
+        Render the game objects
+    */
+
+    // clear old frame
+    this->window->clear(Color(100, 100, 100, 50));
+
+    // draw game objects
+    this->renderBoard();
+    this->renderTexts();
+
+    // display new frame
+    this->window->display();
 
 }
 
-void Game::loadPlayers() {
-    window.clear();
-    pole1.create(VideoMode(400, 200), "player 1");
-    player1 = new Player(setNameOfPlayer("player 1", "Wpisz imie gracza pierwszego", { 10,20 }, { 10, 50 }, &pole1));
-    pole1.close();
-    pole2.create(VideoMode(400, 200), "player 2");
-    player2 = new Player(setNameOfPlayer("player 2", "Wpisz imie gracza drugiego", { 10, 20}, { 10, 50}, &pole2));
-    pole2.close();
+// others
 
-    char z = losuj();
-    
-    player1->setDrawSign(z);
-    if (z == 'X') {
-        player2->setDrawSign('O');
+char Game::signDrawing() {
+
+    srand((unsigned)time(NULL));
+    int n;
+    n = (rand() % 2) + 1;
+
+    if (n == 1) {
+        return 'X';
     }
     else {
-        player2->setDrawSign('X');
+        return 'O';
     }
 
 
-};
+}
 
-String Game::setNameOfPlayer(string p, string t, Vector2f posText, Vector2f posName, RenderWindow *pole) {
+String Game::setNameOfPlayer(string p, string t, Vector2f posText, Vector2f posName, RenderWindow* pole) {
 
     Text name{};
     name.setPosition(posName);
@@ -96,7 +345,7 @@ String Game::setNameOfPlayer(string p, string t, Vector2f posText, Vector2f posN
                 switch (event.key.code) {
 
                 case Keyboard::Enter: {
-                    
+
                     return name.getString();
                     break;
                 }
@@ -115,98 +364,38 @@ String Game::setNameOfPlayer(string p, string t, Vector2f posText, Vector2f posN
         pole->display();
     }
 
-    
-}
-
-
-Text Game::zawodnicy(Player *player, Vector2f v) {
-
-    Text zawodnik1;
-    zawodnik1.setPosition(v);
-    zawodnik1.setFillColor(Color::Blue);
-    zawodnik1.setFont(font);
-    zawodnik1.setString(player->getName());
-
-    return zawodnik1;
-
 
 }
 
-void Game::wczytaj_plansze() {
-    cout << "ustawianie pozyji \n";
-    int tempX = 110;
-    int tempY = 100;
-    int k = 0;
-    for (int i = 0; i < 3; i++) {
+void Game::checkIfWinner(char z) {
 
-        for (int j = 0; j < 3; j++) {
-
-            field[k].setPosition(tempX, tempY);
-
-            tempX += 65;
-            k++;
-        }
-        tempX = 110;
-        tempY += 65;
-    }
-
-
-}
-
-char Game::losuj() {
-    srand((unsigned)time(NULL));
-    int n;
-    n = (rand() % 2) + 1;
-    cout << n << " ";
-
-    if (n == 1) {
-        return 'X';
-    }
-    else {
-        return 'O';
-    }
-
-
-}
-
-void Game::checkClicked(Event e) {
-
-    for (int i = 0; i < 9; i++) {
-        if (field[i].checkClicked(e, ActivePlayer->getDrawSign())) {
-            sprawdzWygrana(ActivePlayer->getDrawSign());
-            if (ActivePlayer == player1) {
-                ActivePlayer = player2;
-            }
-            else {
-                ActivePlayer = player1;
-            }
-            
-        }
-    }
-
-}
-
-void Game::sprawdzWygrana(char z) {
-
-    int licznik {0};
+    int licznik{ 0 };
     int a{};
 
-    for (int i = 0; i < wygranePola.length(); i++) {
-        if (wygranePola[i] == ',') {
-            cout << "sprawdzone " << i << "\n";
+    for (int i = 0; i < this->winnerBoard.length(); i++) {
+        if (this->winnerBoard[i] == ',') {
+            cout << "sprawdzone " << i << " li:" << licznik << "\n";
             licznik = 0;
-        }else{
-            a = (int)wygranePola[i] - 48;
-            if (field[a].getSign().getString()[0] == z) {
-                cout << "trafione " << i << "\n";
+        }
+        else {
+            a = (int)this->winnerBoard[i] - 48;
+            if (board[a].getSign().getString()[0] == z) {
+                cout << "trafione " << i << " li:" << licznik<< "\n";
                 licznik++;
+               
             }
-            
+            else {
+                cout << " nie trafione " << i << " li:" << licznik << "\n";
+                
+            }
+
+            if (licznik == 3) {
+                this->winnerPlayer = ActivePlayer;
+                break;
+            }
+
         }
 
-        if (licznik == 3) {
-            wygrany = ActivePlayer;
-            break;
-        }
+        
     }
 }

@@ -6,22 +6,29 @@ using namespace std;
 using namespace sf;
 
 class Player{
-public:
+	private:
+		// player parameters
 		string name;
 		char draw_sign;
 		Color color;
+		RectangleShape backgroundRectangle;
 
-
+	public:
+		// constructors / descructors
 		Player();
-		Player(string n);
+		Player(string name);
 		~Player();
 		
-		void setName(string n);
-		void setDrawSign(char ds);
-		void setColor(Color c);
+		// functions set
+		void setName(string name);
+		void setDrawSign(char drawSign);
+		void setColor(Color color);
+		void setBackgroundRectangle(Color color, Vector2f position);
 
+		// functions get
 		string getName();
 		char getDrawSign();
 		Color getColor();
+		RectangleShape getBackgroundRectangle();
 };
 

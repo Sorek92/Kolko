@@ -25,15 +25,15 @@ public:
 
     // set 
     void setField();
-    void setPosition(int, int);
+    void setPosition(float, float, float);
     void setSign(Event e);
     void setButton(bool b);
 
     // get
     RectangleShape getField();
-    Vector2f getPosition();
     Text getSign();
     bool getButton();
+    char getSignChar();
     
     //others
     bool checkClicked(Event e, char z);
